@@ -184,14 +184,13 @@ function uploadGlobal(event) {
 
   statusDiv.textContent = 'Streaming image bytes to Cloudinary media servers...';
   
-  const file = fileInput.files;
-  const formData = new FormData();
+  const file = fileInput.files[0]; // CRITICAL FIX: Extract the actual single file item out of the list container!
   
-  // FIXED: Appends the precise file binary block item instead of the input list container object
-  formData.append('file', file[0]);
+  const formData = new FormData();
+  formData.append('file', file); // Pass the raw image file item directly
   formData.append('upload_preset', CLOUDINARY_PRESET);
 
-  fetch(`https://cloudinary.com{CLOUDINARY_CLOUD_NAME}/image/upload`, {
+  fetch('https://api.cloudinary.com/v1_1/' CLOUDINARY_CLOUD_NAME + '/image/upload', {
     method: 'POST',
     body: formData
   })
@@ -210,8 +209,8 @@ function uploadGlobal(event) {
       body: JSON.stringify({
         action: 'upload_global_file',
         fileData: "",
-        fileName: file[0].name, // FIXED here as well
-        fileType: file[0].type, // FIXED here as well
+        fileName: file.name, // FIXED here as well
+        fileType: file.type, // FIXED here as well
         tags: tags,
         directUrl: cleanImageUrl
       })
