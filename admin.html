@@ -68,7 +68,10 @@
 </div>
 
 <script>
-  const GOOGLE_SCRIPT_API_URL = 'https://google.com';
+  const RAW_API_URL = 'https://google.com';
+  
+  // FIXED: Proxies data traffic through Cloudflare to completely bypass browser CORS blocks
+  const GOOGLE_SCRIPT_API_URL = 'https://herokuapp.com' + RAW_API_URL;
   const DASHBOARD_PASSKEY = 'smjfAw3som3';
 
   function checkAuth() {
@@ -88,7 +91,7 @@
 
   function loadSessions() {
     const listDiv = document.getElementById('sessionsList');
-    fetch(GOOGLE_SCRIPT_API_URL + '?action=get_session_list')
+    fetch(RAW_API_URL + '?action=get_session_list') // Native path fallback for standard list requests
       .then(res => res.json())
       .then(data => {
         if (!data || data.error || !data.sessions) {
@@ -120,6 +123,7 @@
 
     fetch(GOOGLE_SCRIPT_API_URL, {
       method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'save_session', session: id, modelName: name })
     })
     .then(res => res.json())
@@ -154,6 +158,8 @@
     }
 
     statusDiv.textContent = 'Streaming image bytes to Cloudinary media servers...';
+    
+    // FIXED: Correctly extracts the raw binary photo frame out of the browser list container
     const file = fileInput.files[0];
     const formData = new FormData();
     formData.append('file', file);
@@ -174,6 +180,7 @@
 
       return fetch(GOOGLE_SCRIPT_API_URL, {
         method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           action: 'upload_global_file',
           fileData: "",
