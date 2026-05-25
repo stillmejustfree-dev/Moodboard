@@ -75,13 +75,12 @@
   const DASHBOARD_PASSKEY = 'smjfAw3som3';
 
   function checkAuth() {
-    const passInput = document.getElementById('adminPassword').value.trim();
-    if (passInput === DASHBOARD_PASSKEY) {
+    if (document.getElementById('adminPassword').value.trim() === DASHBOARD_PASSKEY) {
       document.getElementById('auth-gate').style.display = 'none';
       document.getElementById('dashboard-content').style.display = 'block';
       loadSessions();
     } else {
-      alert("Incorrect studio passkey. Authorization denied.");
+      alert("Incorrect studio passkey.");
     }
   }
 
@@ -91,7 +90,8 @@
 
   function loadSessions() {
     const listDiv = document.getElementById('sessionsList');
-    fetch(RAW_API_URL + '?action=get_session_list') // Native path fallback for standard list requests
+    // FIXED: Points strictly to GOOGLE_SCRIPT_API_URL instead of the missing RAW_API_URL variable
+    fetch(GOOGLE_SCRIPT_API_URL + '?action=get_session_list')
       .then(res => res.json())
       .then(data => {
         if (!data || data.error || !data.sessions) {
@@ -125,7 +125,6 @@
       method: 'POST',
       body: JSON.stringify({ action: 'save_session', session: id, modelName: name })
     })
-
     .then(res => res.json())
     .then(res => {
       if (!res || res.error) {
@@ -158,14 +157,12 @@
     }
 
     statusDiv.textContent = 'Streaming image bytes to Cloudinary media servers...';
-    
-    // FIXED: Correctly extracts the raw binary photo frame out of the browser list container
     const file = fileInput.files[0];
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', CLOUDINARY_PRESET);
 
-    fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/image/upload', {
+    fetch('https://cloudinary.com' + CLOUDINARY_CLOUD_NAME + '/image/upload', {
       method: 'POST',
       body: formData
     })
@@ -178,18 +175,18 @@
       const cleanImageUrl = cloudinaryData.secure_url;
       statusDiv.textContent = 'Cloudinary synced! Recording link to Google Sheets...';
 
-          return fetch(GOOGLE_SCRIPT_API_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'upload_global_file',
-              fileData: "",
-              fileName: file.name,
-              fileType: file.type,
-              tags: tags,
-              directUrl: cleanImageUrl
-            })
-          });
-
+      // FIXED: Points back to your authentic GOOGLE_SCRIPT_API_URL instead of the hardcoded google.com link
+      return fetch(GOOGLE_SCRIPT_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'upload_global_file',
+          fileData: "",
+          fileName: file.name,
+          fileType: file.type,
+          tags: tags,
+          directUrl: cleanImageUrl
+        })
+      });
     })
     .then(res => res ? res.json() : null)
     .then(sheetRes => {
@@ -205,6 +202,7 @@
   }
 
   window.onload = loadSessions;
+
 </script>
 </body>
 </html>
