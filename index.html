@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Studio Moodboard Hub</title>
+    <style>
+      /* --- HARD WIRED NATIVE MOBILE SYSTEM WRAPPERS --- */
+      * { box-sizing: border-box !important; margin: 0; padding: 0; }
+      html, body {
+        width: 100% !important; max-width: 100% !important;
+        overflow-x: hidden !important; /* TOTALLY KILLS SIDE TO SIDE HORIZONTAL SHIFT FLOATING SPACE */
+        background: #0d0d0d !important; color: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .container { width: 100% !important; max-width: 440px !important; margin: 0 auto !important; padding: 16px !important; }
+      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-b: 1px solid #1a1a1a; padding-bottom: 12px; }
+      
+      /* --- SMART SECTOR PHONE APP NAVIGATION TABS --- */
+      .tabs { display: flex !important; background: #1a1a1a; padding: 4px; border-radius: 999px; border: 1px solid #2a2a2a; margin-bottom: 16px; gap: 4px; }
+      .tab { flex: 1 !important; text-align: center; padding: 12px 0 !important; cursor: pointer; font-size: 13px; border-radius: 999px !important; color: #a3a3a3 !important; font-weight: 600; transition: 0.15s ease; }
+      .tab.active { background: #ffffff !important; color: #000000 !important; font-weight: 700 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+      
+      /* --- CLASSIFICATION PREFERENCE LOGIC BAR --- */
+      #studio-filter-bar { background: #1a1a1a !important; border: 1px solid #2a2a2a !important; border-radius: 16px !important; padding: 14px !important; margin-bottom: 16px !important; }
+      .tag-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .tag { padding: 8px 14px; border-radius: 999px; border: 1px solid #444; background: #000; color: #eee; font-size: 12px; font-weight: 600; cursor: pointer; }
+      .tag.active { background: #eee; color: #111; border-color: #eee; }
+      
+      /* --- HIGH VISIBILITY SINGLE PORTRAIT IMAGES GRID FEED --- */
+      .images-grid { display: grid !important; grid-template-columns: 1fr !important; gap: 16px !important; width: 100% !important; }
+      .image-card { position: relative !important; border-radius: 16px !important; overflow: hidden !important; border: 1px solid #2a2a2a !important; background: #121212 !important; box-shadow: 0 8px 20px rgba(0,0,0,0.4) !important; width: 100% !important; }
+      .image-card img { width: 100% !important; height: auto !important; display: block !important; object-fit: contain !important; }
+      
+      /* --- THUMB OPTIMIZED ACTION TRIGGERS --- */
+      .image-card button { position: absolute !important; bottom: 12px !important; right: 12px !important; font-size: 13px !important; font-weight: 700 !important; padding: 10px 20px !important; border-radius: 999px !important; border: 1px solid rgba(255,255,255,0.1) !important; background: rgba(0,0,0,0.8) !important; color: #fff; cursor: pointer; backdrop-filter: blur(6px); }
+      .image-card.selected { outline: 3px solid #4ade80 !important; outline-offset: -3px; }
+      .image-card.selected button { background: #4ade80 !important; color: #000 !important; border-color: #4ade80 !important; }
+      
+      /* --- CONTROLLER HOUSING VIEWS --- */
+      .section { display: none; width: 100% !important; }
+      .section.active { display: block !important; }
+      .upload-box { background: #1a1a1a !important; border: 1px solid #2a2a2a !important; border-radius: 16px !important; padding: 16px !important; margin-top: 16px !important; }
+      #uploadForm input[type="file"] { width: 100% !important; margin-bottom: 12px !important; color: #a3a3a3; font-size: 13px; }
+      #uploadForm button[type="submit"] { width: 100% !important; padding: 12px !important; border-radius: 999px !important; background: #fff !important; color: #000 !important; font-weight: 700 !important; border: none !important; cursor: pointer; }
+      
+      /* --- ISOLATED WHATSAPP STYLE MESSENGER HUD --- */
+      .comments { background: #1a1a1a !important; border: 1px solid #2a2a2a !important; border-radius: 16px !important; padding: 16px !important; width: 100% !important; }
+      .comments h4 { margin: 0 0 12px 0; font-size: 15px; font-weight: 600; color: #fff; border-bottom: 1px solid #2a2a2a; padding-bottom: 8px; }
+      .comment { padding: 10px 0; border-bottom: 1px solid #222; font-size: 13px; }
+      .comment:last-child { border-bottom: none; }
+      .comment-author { font-weight: 700; color: #4ade80; }
+      .comment-meta { font-size: 10px; color: #737373; margin-left: 6px; }
+      .comment-input { display: flex; gap: 8px; margin-top: 14px; width: 100% !important; }
+      .comment-input input { flex: 1; padding: 12px 16px; border-radius: 999px; border: 1px solid #2a2a2a; background: #000; color: #eee; font-size: 14px; outline: none; }
+      .comment-input button { padding: 12px 20px; border-radius: 999px; border: none; background: #fff; color: #000; font-weight: 700; font-size: 13px; cursor: pointer; }
+      .pill { font-size: 11px; padding: 2px 6px; border-radius: 999px; border: 1px solid #444; margin-left: 4px; }
+      .small { font-size: 11px; color: #a3a3a3; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div>
+          <div style="font-size: 16px;"><strong id="sessionNameTitle">Studio Space</strong></div>
+          <div class="small" id="sessionTokenSub">Initializing Stream Array...</div>
+        </div>
+        <div class="small" id="selectedCountBadge" style="background:#1a1a1a; padding:4px 10px; border-radius:8px; border:1px solid #2a2a2a;">0 Saved</div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" id="tab-browse" onclick="switchTab('browse')">Browse</div>
+        <div class="tab" id="tab-inspiration" onclick="switchTab('inspiration')">Inspiration</div>
+        <div class="tab" id="tab-chat" onclick="switchTab('chat')">Chat</div>
+      </div>
+
+      <div id="app">
+        <div id="view-browse" class="section active">
+          <div id="studio-filter-bar">
+            <div style="font-size:12px; font-weight:600; color:#ffd36e;">🔒 Tap comfort tags below to reveal photography frames:</div>
+            <div class="tag-filters" id="tagFiltersRow"></div>
+          </div>
+          <div class="images-grid" id="browseImagesGrid"></div>
+        </div>
+
+        <div id="view-inspiration" class="section">
+          <h3 style="margin:0 0 4px 0; font-size:15px; font-weight:600;">Saved Framework Choices</h3>
+          <p class="small" style="margin:0 0 16px 0;">Your active selections live updates:</p>
+          <div class="images-grid" id="savedImagesGrid"></div>
+          
+          <div class="upload-box">
+            <form id="uploadForm" onsubmit="handleUploadSubmit(event)">
+              <div style="margin-bottom:8px; font-weight:600;">Submit direct reference photography file:</div>
+              <input type="file" id="uploadFile" name="modelFile" accept="image/*">
+              <button type="submit">Upload Idea Asset</button>
+              <div id="uploadStatus" class="small" style="margin-top:6px; color:#4ade80;"></div>
+            </form>
+          </div>
+        </div>
+
+        <div id="view-chat" class="section">
+          <div class="comments">
+            <h4>Live Production Chat Pipeline</h4>
+            <div id="commentsTimeline" style="max-height:340px; overflow-y:auto; margin-bottom:12px; padding-right:4px;"></div>
+            <div class="comment-input">
+              <input id="commentText" type="text" placeholder="Type an update instruction...">
+              <button onclick="addComment()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // !!! PASTE YOUR COPIED GOOGLE WEB APP URL LINK BETWEEN THESE SINGLE QUOTES !!!
+      const GOOGLE_SCRIPT_API_URL = 'https://script.google.com/macros/s/AKfycbz2shg2AW80FOh4HeV-U4Mw0mFqirqFojj6Zm_PZoViYJ50s0aggH_85bzJj6cSdk66lg/exec';
+
+      // Parse the active shoot session directly out of your browser link parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const SESSION_ID = urlParams.get('session') || '';
+
+      let state = {
+        loading: true,
+        images: [],
+        session: null,
+        activeTags: new Set(),
+        tab: 'browse'
+      };
+
+      function init() {
+        if (!SESSION_ID) {
+          document.getElementById('app').innerHTML = '<div style="text-align:center;padding:40px;"><h2>No Session Link Extracted</h2><p class="small">Append <code>?session=YOUR_ID</code> to the end of your GitHub website link address bar.</p></div>';
+          return;
+        }
+        
+        // Fetch session data across the web from Google Sheets API
+        fetch(`${GOOGLE_SCRIPT_API_URL}?action=get_session&session=${encodeURIComponent(SESSION_ID)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.error) {
+              document.getElementById('app').innerHTML = `<p style="padding:20px;text-align:center;">Sync Error: ${data.error}</p>`;
+              return;
+            }
+            state.loading = false;
+            state.images = data.images || [];
+            state.session = data.session || { selectedImages: [], modelUploads: [], comments: [] };
+            
+            document.getElementById('sessionNameTitle').textContent = state.session.modelName || 'Studio Space';
+            document.getElementById('sessionTokenSub').textContent = 'Shoot ID: ' + SESSION_ID;
+            
+            render();
+          })
+          .catch(err => {
+            document.getElementById('app').innerHTML = '<p style="padding:20px;text-align:center;">Fatal network routing timeout connecting to cloud sheet registry.</p>';
+          });
+      }
+
+      function toggleTag(tag) {
+        if (state.activeTags.has(tag)) state.activeTags.delete(tag);
+        else state.activeTags.add(tag);
+        render();
+      }
+
+      function isImageVisible(img) {
+        if (state.activeTags.size === 0) return false;
+        return img.tags && img.tags.some(t => state.activeTags.has(t));
+      }
+
+      function isSelected(id) {
+        return state.session.selectedImages && state.session.selectedImages.includes(id);
+      }
+
+      function toggleSelect(id) {
+        if (!state.session.selectedImages) state.session.selectedImages = [];
+        const arr = state.session.selectedImages.slice();
+        const idx = arr.indexOf(id);
+        if (idx >= 0) arr.splice(idx, 1); else arr.push(id);
+        state.session.selectedImages = arr;
+        document.getElementById('selectedCountBadge').textContent = arr.length + ' Saved';
+        
+        // Push payload across the web via network post request
+        fetch(GOOGLE_SCRIPT_API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'save_selections', session: SESSION_ID, selections: arr })
+        });
+        
+        render();
+      }
+
+      function switchTab(tabName) {
+        state.tab = tabName;
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabName).classList.add('active');
+        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+        document.getElementById('view-' + tabName).classList.add('active');
+        render();
+      }
+
+      function addComment() {
+        const input = document.getElementById('commentText');
+        const text = input.value.trim();
+        if (!text) return;
+        const author = prompt('Enter your name:', '') || 'Model';
+        
+        fetch(GOOGLE_SCRIPT_API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'add_comment', session: SESSION_ID, author: author, text: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) {
+            state.session.comments = data.comments;
+            input.value = '';
+            render();
+          }
+        });
+      }
+
+      function handleUploadSubmit(e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('uploadFile');
+        if (!fileInput.files.length) return;
+        const file = fileInput.files[0];
+        
+        document.getElementById('uploadStatus').textContent = 'Processing file bits...';
+        
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const base64String = evt.target.result.split(',')[1];
+          
+          document.getElementById('uploadStatus').textContent = 'Uploading to Drive folder...';
+          
+          fetch(GOOGLE_SCRIPT_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'upload_model_file',
+              session: SESSION_ID,
+              fileData: base64String,
+              fileName: file.name,
+              fileType: file.type
+            })
+          })
+          .then(res => res.json())
+          .then(res => {
+            if (res.error) {
+              document.getElementById('uploadStatus').textContent = 'Upload Error: ' + res.error;
+              return;
+            }
+            state.session.modelUploads = res.uploads || [];
+            document.getElementById('uploadStatus').textContent = 'Uploaded successfully!';
+            fileInput.value = '';
+            render();
+          })
+          .catch(() => {
+            document.getElementById('uploadStatus').textContent = 'Connection timeout';
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function render() {
+        if (state.loading || !state.session) return;
+
+        const savedCount = state.session.selectedImages ? state.session.selectedImages.length : 0;
+        document.getElementById('selectedCountBadge').textContent = savedCount + ' Saved';
+
+        if (state.tab === 'browse') {
+          const allTags = new Set();
+          state.images.forEach(img => img.tags && img.tags.forEach(t => allTags.add(t)));
+          
+          const tagsRow = document.getElementById('tagFiltersRow');
+          tagsRow.innerHTML = Array.from(allTags).sort().map(tag => {
+            return `<button class="tag ${state.activeTags.has(tag) ? 'active' : ''}" onclick="toggleTag('${tag}')">${tag}</button>`;
+          }).join('');
+
+          const hintText = document.getElementById('studio-filter-bar').querySelector('div');
+          hintText.innerHTML = state.activeTags.size === 0 
+            ? '🔒 <span style="color:#ffd36e; font-weight:600;">Tap comfort tags below to reveal photography frames:</span>'
+            : '🔓 <span style="color:#4ade80;">Active preference filter parameters applied:</span>';
+
+          const browseGrid = document.getElementById('browseImagesGrid');
+          const visibleImages = state.images.filter(isImageVisible);
+
+          if (visibleImages.length === 0) {
+            browseGrid.innerHTML = `<p class="small" style="grid-column:1/-1; text-align:center; padding:40px; color:#666;">${state.activeTags.size === 0 ? 'No categories toggled. Choose comfort attributes at the top to load references.' : 'No images found matching this combo.'}</p>`;
+          } else {
+            browseGrid.innerHTML = visibleImages.map(img => {
+              const selected = isSelected(img.id);
+              return `<div class="image-card ${selected ? 'selected' : ''}">
+                <img src="${img.url}" loading="lazy" onerror="this.src='https://unsplash.com'">
+                <button onclick="toggleSelect('${img.id}')">${selected ? '✓ Saved' : 'Save Frame'}</button>
+              </div>`;
+            }).join('');
+          }
+        }
+
+        if (state.tab === 'inspiration') {
+          const savedGrid = document.getElementById('savedImagesGrid');
+          const selectedGlobal = state.images.filter(img => isSelected(img.id));
+          const uploads = state.session.modelUploads || [];
+
+          if (selectedGlobal.length === 0 && uploads.length === 0) {
+            savedGrid.innerHTML = '<p class="small" style="grid-column:1/-1; text-align:center; padding:30px; background:#161616; border-radius:12px; color:#555;">No selections or uploads added to your board workspace yet.</p>';
+          } else {
+            let coreHtml = selectedGlobal.map(img => `<div class="image-card"><img src="${img.url}" loading="lazy"></div>`).join('');
+            let uploadHtml = uploads.map(url => `<div class="image-card"><img src="${url}" loading="lazy"><div class="pill" style="position:absolute; top:8px; left:8px; background:rgba(16,185,129,0.9); border:none; color:#fff; font-weight:600;">Model Inspo</div></div>`).join('');
+            savedGrid.innerHTML = coreHtml + uploadHtml;
+          }
+        }
+
+        if (state.tab === 'chat') {
+          const chatTimeline = document.getElementById('commentsTimeline');
+          const commentList = state.session.comments || [];
+
+          if (commentList.length === 0) {
+            chatTimeline.innerHTML = '<p class="small" style="text-align:center; padding:40px; color:#555; font-style: italic">No conversation notes log recorded yet. Type a line below to sync with the photographer studio loop.</p>';
+          } else {
+            chatTimeline.innerHTML = commentList.map(c => {
+              return `<div class="comment">
+                <div><span class="comment-author">${c.author}</span><span class="comment-meta">${c.timestamp || 'Just now'}</span></div>
+                <div style="margin-top:4px; color:#ccc; line-height:1.4;">${c.text}</div>
+              </div>`;
+            }).join('');
+            chatTimeline.scrollTop = chatTimeline.scrollHeight;
+          }
+        }
+      }
+
+      window.onload = init;
+    </script>
+  </body>
+</html>
