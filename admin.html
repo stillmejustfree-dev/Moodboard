@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Studio Control Panel</title>
+  <style>
+    * { box-sizing: border-box !important; margin: 0; padding: 0; }
+    html, body {
+      width: 100% !important; max-width: 100% !important;
+      overflow-x: hidden !important;
+      background: #0a0a0a !important; color: #eee;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container { width: 100% !important; max-width: 440px !important; margin: 0 auto !important; padding: 16px !important; }
+    h2 { margin: 8px 0 16px 0; font-size: 20px; font-weight: 700; border-bottom: 1px solid #222; padding-bottom: 12px; }
+    .section { margin-bottom: 20px; padding: 16px; background: #161616; border-radius: 16px; border: 1px solid #262626; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    h3 { margin-top: 0; font-size: 14px; color: #a3a3a3; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    input, button { padding: 12px; border-radius: 8px; border: 1px solid #2a2a2a; background: #000; color: #eee; outline: none; font-size: 14px; width: 100%; margin-bottom: 10px; }
+    button { background: #fff; color: #000; font-weight: 700; cursor: pointer; border: none; transition: 0.15s ease; margin-bottom: 0; }
+    button:hover { background: #ddd; }
+    .session-row { padding: 14px 0; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+    .session-row:last-child { border-bottom: none; }
+    .small { font-size: 11px; color: #737373; font-family: monospace; display: block; margin-top: 2px; }
+    a { color: #4ade80; text-decoration: none; font-weight: 600; font-size: 14px; }
+    
+    /* --- AUTH SCREEN GATE LAYOUT --- */
+    #auth-gate { position: fixed; inset: 0; background: #0a0a0a; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .auth-card { background: #161616; border: 1px solid #262626; border-radius: 20px; padding: 24px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
+  </style>
+</head>
+<body>
+
+<!-- Private Access Lock Gate -->
+<div id="auth-gate">
+  <div class="auth-card">
+    <div style="font-size: 32px; margin-bottom: 10px;">🔒</div>
+    <h3 style="color:#fff; margin-bottom: 6px;">Studio Authentication</h3>
+    <p class="small" style="margin-bottom: 16px;">Enter your admin passkey token to unlock the control streams:</p>
+    <input type="password" id="adminPassword" placeholder="Enter password...">
+    <button onclick="checkAuth()">Unlock Dashboard</button>
+  </div>
+</div>
+
+<div class="container" id="dashboard-content" style="display:none;">
+  <h2>📸 Studio Control Panel</h2>
+
+  <div class="section">
+    <h3>Upload Global Portfolio Image</h3>
+    <form id="uploadGlobalForm" onsubmit="uploadGlobal(event)" enctype="multipart/form-data">
+      <input type="file" id="globalFile" accept="image/*">
+      <input type="text" id="globalTags" placeholder="Metadata tags (comma-separated, e.g., glam, outdoor)">
+      <button type="submit">Upload to Sheet Hub</button>
+    </form>
+    <div id="uploadGlobalStatus" class="small" style="margin-top:8px; color:#4ade80; font-size:12px; font-weight:600;"></div>
+  </div>
+
+  <div class="section">
+    <h3>Create Live Shoot Link</h3>
+    <input type="text" id="newSessionId" placeholder="Shoot Token URL ID (e.g., kathy-2026)">
+    <input type="text" id="newModelName" placeholder="Model Full Name (e.g., Kathy)">
+    <button onclick="createSession()">Deploy Session Board</button>
+    <div id="sessionCreateStatus" class="small" style="margin-top:8px; color:#4ade80;"></div>
+  </div>
+
+  <div class="section">
+    <h3>Active Client Connections</h3>
+    <div id="sessionsList" style="color:#666; font-size:13px; font-style:italic;">Pulling session registry keys...</div>
+  </div>
+</div>
+  <script>
+    // !!! PASTE YOUR COPIED GOOGLE WEB APP URL LINK BETWEEN THESE SINGLE QUOTES !!!
+    const GOOGLE_SCRIPT_API_URL = 'https://script.google.com/macros/s/AKfycbz2shg2AW80FOh4HeV-U4Mw0mFqirqFojj6Zm_PZoViYJ50s0aggH_85bzJj6cSdk66lg/exec';
+    
+    // !!! SET YOUR CHOSEN ADMIN ACCESS PASSWORD HERE !!!
+    const DASHBOARD_PASSKEY = 'smjfAw3som3';
+
+    // Simple, secure interface authentication lock checker
+    function checkAuth() {
+      const passInput = document.getElementById('adminPassword').value.trim();
+      if (passInput === DASHBOARD_PASSKEY) {
+        document.getElementById('auth-gate').style.display = 'none';
+        document.getElementById('dashboard-content').style.display = 'block';
+        loadSessions();
+      } else {
+        alert("Incorrect studio passkey. Authorization denied.");
+      }
+    }
+
+    // Support unlocking by hitting the Enter key on the keyboard
+    document.getElementById('adminPassword').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') checkAuth();
+    });
+
+    function loadSessions() {
+      const listDiv = document.getElementById('sessionsList');
+      
+      fetch(`${GOOGLE_SCRIPT_API_URL}?action=get_session_list`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.error || !data.sessions) {
+            listDiv.textContent = 'Error pulling active registry channels.';
+            return;
+          }
+          if (data.sessions.length === 0) {
+            listDiv.textContent = 'No active client moodboard slots generated yet.';
+            return;
+          }
+          
+          // Generate pristine, fluid, thumb-friendly mobile links pointing to your GitHub pages portal
+          const githubBaseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+          
+          listDiv.innerHTML = data.sessions.map(s => {
+            const clientLink = `${githubBaseUrl}index.html?session=${encodeURIComponent(s.sessionId)}`;
+            return `
+              <div class="session-row">
+                <div>
+                  <strong>${s.modelName}</strong>
+                  <span class="small">Token Key: ${s.sessionId}</span>
+                </div>
+                <div>
+                  <a href="${clientLink}" target="_blank">Open App</a>
+                </div>
+              </div>
+            `;
+          }).join('');
+        })
+        .catch(() => {
+          listDiv.textContent = 'Network offline. Unable to reach cloud database sheets.';
+        });
+    }
+
+    function createSession() {
+      const id = document.getElementById('newSessionId').value.trim();
+      const name = document.getElementById('newModelName').value.trim();
+      const statusDiv = document.getElementById('sessionCreateStatus');
+      if (!id || !name) return;
+
+      statusDiv.textContent = 'Allocating matrix registry indexes...';
+
+      fetch(GOOGLE_SCRIPT_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'save_session', session: id, modelName: name })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (!res || res.error) {
+          statusDiv.innerHTML = `<span style="color:#ff6b6b;">Error: ${res ? res.error : 'Timeout'}</span>`;
+          return;
+        }
+        
+        const githubBaseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        const clientLink = `${githubBaseUrl}index.html?session=${encodeURIComponent(id)}`;
+        
+        statusDiv.innerHTML = `Deployed! <br><a href="${clientLink}" target="_blank">${clientLink}</a>`;
+        document.getElementById('newSessionId').value = '';
+        document.getElementById('newModelName').value = '';
+        loadSessions();
+      })
+      .catch(() => {
+        statusDiv.innerHTML = '<span style="color:#ff6b6b;">Pipeline routing link failure.</span>';
+      });
+    }
+
+    function uploadGlobal(event) {
+      event.preventDefault();
+      const fileInput = document.getElementById('globalFile');
+      const tags = document.getElementById('globalTags').value;
+      const statusDiv = document.getElementById('uploadGlobalStatus');
+
+      if (!fileInput.files.length) {
+        alert("No file selected");
+        return;
+      }
+
+      statusDiv.textContent = 'Packing image data chunks...';
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(evt) {
+        const base64String = evt.target.result.split(',')[1];
+        statusDiv.textContent = 'Uploading to Google Sheet portfolio reservoir...';
+
+        fetch(GOOGLE_SCRIPT_API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'upload_global_file',
+            fileData: base64String,
+            fileName: file.name,
+            fileType: file.type,
+            tags: tags
+          })
+        })
+        .then(res => res.json())
+        .then(res => {
+          if (!res || res.error) {
+            statusDiv.innerHTML = `<span style="color:#ff6b6b;">Error: ${res ? res.error : 'Connection lost'}</span>`;
+            return;
+          }
+          statusDiv.textContent = 'Asset pushed successfully into live database reservoir!';
+          fileInput.value = '';
+          document.getElementById('globalTags').value = '';
+        })
+        .catch(() => {
+          statusDiv.innerHTML = '<span style="color:#ff6b6b;">Server sync boundary timeout.</span>';
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+</body>
+</html>
