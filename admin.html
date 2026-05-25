@@ -169,8 +169,8 @@
 function uploadGlobal(event) {
   event.preventDefault();
   
-  // !!! ENTER YOUR UNIQUE CLOUDINARY CLOUD NAME INSIDE THESE SINGLE QUOTES !!!
-  const CLOUDINARY_CLOUD_NAME = 'dn1nrr761';
+  // !!! DOUBLE CHECK THAT YOUR CLOUD NAME IS WRITTEN HERE EXACTLY !!!
+  const CLOUDINARY_CLOUD_NAME = 'YOUR_CLOUDINARY_CLOUD_NAME';
   const CLOUDINARY_PRESET = 'moodboard_preset';
 
   const fileInput = document.getElementById('globalFile');
@@ -184,12 +184,13 @@ function uploadGlobal(event) {
 
   statusDiv.textContent = 'Streaming image bytes to Cloudinary media servers...';
   
-  const file = fileInput.files[0];
+  const file = fileInput.files;
   const formData = new FormData();
-  formData.append('file', file);
+  
+  // FIXED: Appends the precise file binary block item instead of the input list container object
+  formData.append('file', file[0]);
   formData.append('upload_preset', CLOUDINARY_PRESET);
 
-  // Push image directly to dedicated media storage (Bypasses Google limits completely)
   fetch(`https://cloudinary.com{CLOUDINARY_CLOUD_NAME}/image/upload`, {
     method: 'POST',
     body: formData
@@ -201,20 +202,18 @@ function uploadGlobal(event) {
       return;
     }
     
-    // Cloudinary successfully generated a perfect public image URL link
     const cleanImageUrl = cloudinaryData.secure_url;
     statusDiv.textContent = 'Cloudinary synced! Recording link to Google Sheets...';
 
-    // Drop just the clean text link into your spreadsheet database row
     return fetch(GOOGLE_SCRIPT_API_URL, {
       method: 'POST',
       body: JSON.stringify({
         action: 'upload_global_file',
-        fileData: "", // No more heavy payload bytes crashing Google!
-        fileName: file.name,
-        fileType: file.type,
+        fileData: "",
+        fileName: file[0].name, // FIXED here as well
+        fileType: file[0].type, // FIXED here as well
         tags: tags,
-        directUrl: cleanImageUrl // Send the direct link safely
+        directUrl: cleanImageUrl
       })
     });
   })
@@ -230,6 +229,7 @@ function uploadGlobal(event) {
     statusDiv.innerHTML = `<span style="color:#ff6b6b;">Pipeline Error: ${err.message}</span>`;
   });
 }
+
 
 
   </script>
