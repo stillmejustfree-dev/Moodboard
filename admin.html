@@ -24,15 +24,12 @@
     .session-row:last-child { border-bottom: none; }
     .small { font-size: 11px; color: #737373; font-family: monospace; display: block; margin-top: 2px; }
     a { color: #4ade80; text-decoration: none; font-weight: 600; font-size: 14px; }
-    
-    /* --- AUTH SCREEN GATE LAYOUT --- */
     #auth-gate { position: fixed; inset: 0; background: #0a0a0a; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
     .auth-card { background: #161616; border: 1px solid #262626; border-radius: 20px; padding: 24px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
   </style>
 </head>
 <body>
 
-<!-- Private Access Lock Gate -->
 <div id="auth-gate">
   <div class="auth-card">
     <div style="font-size: 32px; margin-bottom: 10px;">🔒</div>
@@ -69,168 +66,138 @@
     <div id="sessionsList" style="color:#666; font-size:13px; font-style:italic;">Pulling session registry keys...</div>
   </div>
 </div>
-  <script>
-    // !!! PASTE YOUR COPIED GOOGLE WEB APP URL LINK BETWEEN THESE SINGLE QUOTES !!!
-    const GOOGLE_SCRIPT_API_URL = 'https://script.google.com/macros/s/AKfycbz2shg2AW80FOh4HeV-U4Mw0mFqirqFojj6Zm_PZoViYJ50s0aggH_85bzJj6cSdk66lg/exec';
-    
-    // !!! SET YOUR CHOSEN ADMIN ACCESS PASSWORD HERE !!!
-    const DASHBOARD_PASSKEY = 'smjfAw3som3';
 
-    // Simple, secure interface authentication lock checker
-    function checkAuth() {
-      const passInput = document.getElementById('adminPassword').value.trim();
-      if (passInput === DASHBOARD_PASSKEY) {
-        document.getElementById('auth-gate').style.display = 'none';
-        document.getElementById('dashboard-content').style.display = 'block';
-        loadSessions();
-      } else {
-        alert("Incorrect studio passkey. Authorization denied.");
-      }
+<script>
+  const GOOGLE_SCRIPT_API_URL = 'https://google.com';
+  const DASHBOARD_PASSKEY = 'smjfAw3som3';
+
+  function checkAuth() {
+    const passInput = document.getElementById('adminPassword').value.trim();
+    if (passInput === DASHBOARD_PASSKEY) {
+      document.getElementById('auth-gate').style.display = 'none';
+      document.getElementById('dashboard-content').style.display = 'block';
+      loadSessions();
+    } else {
+      alert("Incorrect studio passkey. Authorization denied.");
     }
-
-    // Support unlocking by hitting the Enter key on the keyboard
-    document.getElementById('adminPassword').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') checkAuth();
-    });
-
-    function loadSessions() {
-      const listDiv = document.getElementById('sessionsList');
-      
-      fetch(`${GOOGLE_SCRIPT_API_URL}?action=get_session_list`)
-        .then(res => res.json())
-        .then(data => {
-          if (!data || data.error || !data.sessions) {
-            listDiv.textContent = 'Error pulling active registry channels.';
-            return;
-          }
-          if (data.sessions.length === 0) {
-            listDiv.textContent = 'No active client moodboard slots generated yet.';
-            return;
-          }
-          
-          // Generate pristine, fluid, thumb-friendly mobile links pointing to your GitHub pages portal
-          const githubBaseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-          
-          listDiv.innerHTML = data.sessions.map(s => {
-            const clientLink = `${githubBaseUrl}index.html?session=${encodeURIComponent(s.sessionId)}`;
-            return `
-              <div class="session-row">
-                <div>
-                  <strong>${s.modelName}</strong>
-                  <span class="small">Token Key: ${s.sessionId}</span>
-                </div>
-                <div>
-                  <a href="${clientLink}" target="_blank">Open App</a>
-                </div>
-              </div>
-            `;
-          }).join('');
-        })
-        .catch(() => {
-          listDiv.textContent = 'Network offline. Unable to reach cloud database sheets.';
-        });
-    }
-
-    function createSession() {
-      const id = document.getElementById('newSessionId').value.trim();
-      const name = document.getElementById('newModelName').value.trim();
-      const statusDiv = document.getElementById('sessionCreateStatus');
-      if (!id || !name) return;
-
-      statusDiv.textContent = 'Allocating matrix registry indexes...';
-
-      fetch(GOOGLE_SCRIPT_API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'save_session', session: id, modelName: name })
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (!res || res.error) {
-          statusDiv.innerHTML = `<span style="color:#ff6b6b;">Error: ${res ? res.error : 'Timeout'}</span>`;
-          return;
-        }
-        
-        const githubBaseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-        const clientLink = `${githubBaseUrl}index.html?session=${encodeURIComponent(id)}`;
-        
-        statusDiv.innerHTML = `Deployed! <br><a href="${clientLink}" target="_blank">${clientLink}</a>`;
-        document.getElementById('newSessionId').value = '';
-        document.getElementById('newModelName').value = '';
-        loadSessions();
-      })
-      .catch(() => {
-        statusDiv.innerHTML = '<span style="color:#ff6b6b;">Pipeline routing link failure.</span>';
-      });
-    }
-
-// =========================================================
-// CLOUDINARY DIRECT MOBILE UPLOADER ENGINE
-// =========================================================
-function uploadGlobal(event) {
-  event.preventDefault();
-  
-  // !!! DOUBLE CHECK THAT YOUR CLOUD NAME IS WRITTEN HERE EXACTLY !!!
-  const CLOUDINARY_CLOUD_NAME = 'dn1nrr761';
-  const CLOUDINARY_PRESET = 'moodboard_preset';
-
-  const fileInput = document.getElementById('globalFile');
-  const tags = document.getElementById('globalTags').value;
-  const statusDiv = document.getElementById('uploadGlobalStatus');
-
-  if (!fileInput.files.length) {
-    alert("No file selected");
-    return;
   }
 
-  statusDiv.textContent = 'Streaming image bytes to Cloudinary media servers...';
-  
-  const file = fileInput.files[0]; // CRITICAL FIX: Extract the actual single file item out of the list container!
-  
-  const formData = new FormData();
-  formData.append('file', file); // Pass the raw image file item directly
-  formData.append('upload_preset', CLOUDINARY_PRESET);
+  document.getElementById('adminPassword').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkAuth();
+  });
 
-  fetch('https://api.cloudinary.com/v1_1/' CLOUDINARY_CLOUD_NAME + '/image/upload', {
-    method: 'POST',
-    body: formData
-  })
-  .then(res => res.json())
-  .then(cloudinaryData => {
-    if (cloudinaryData.error) {
-      statusDiv.innerHTML = `<span style="color:#ff6b6b;">Cloudinary Error: ${cloudinaryData.error.message}</span>`;
+  function loadSessions() {
+    const listDiv = document.getElementById('sessionsList');
+    fetch(GOOGLE_SCRIPT_API_URL + '?action=get_session_list')
+      .then(res => res.json())
+      .then(data => {
+        if (!data || data.error || !data.sessions) {
+          listDiv.textContent = 'Error pulling active registry channels.';
+          return;
+        }
+        if (data.sessions.length === 0) {
+          listDiv.textContent = 'No active client moodboard slots generated yet.';
+          return;
+        }
+        const githubBaseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        listDiv.innerHTML = data.sessions.map(s => {
+          const clientLink = githubBaseUrl + 'index.html?session=' + encodeURIComponent(s.sessionId);
+          return '<div class="session-row"><div><strong>' + s.modelName + '</strong><span class="small">Token Key: ' + s.sessionId + '</span></div><div><a href="' + clientLink + '" target="_blank">Open App</a></div></div>';
+        }).join('');
+      })
+      .catch(() => {
+        listDiv.textContent = 'Network offline. Unable to reach cloud database sheets.';
+      });
+  }
+
+  function createSession() {
+    const id = document.getElementById('newSessionId').value.trim();
+    const name = document.getElementById('newModelName').value.trim();
+    const statusDiv = document.getElementById('sessionCreateStatus');
+    if (!id || !name) return;
+
+    statusDiv.textContent = 'Allocating matrix registry indexes...';
+
+    fetch(GOOGLE_SCRIPT_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'save_session', session: id, modelName: name })
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (!res || res.error) {
+        statusDiv.innerHTML = '<span style="color:#ff6b6b;">Error: ' + (res ? res.error : 'Timeout') + '</span>';
+        return;
+      }
+      const githubBaseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+      const clientLink = githubBaseUrl + 'index.html?session=' + encodeURIComponent(id);
+      statusDiv.innerHTML = 'Deployed! <br><a href="' + clientLink + '" target="_blank">' + clientLink + '</a>';
+      document.getElementById('newSessionId').value = '';
+      document.getElementById('newModelName').value = '';
+      loadSessions();
+    })
+    .catch(() => {
+      statusDiv.innerHTML = '<span style="color:#ff6b6b;">Pipeline routing link failure.</span>';
+    });
+  }
+
+  function uploadGlobal(event) {
+    event.preventDefault();
+    const CLOUDINARY_CLOUD_NAME = 'dn1nrr761';
+    const CLOUDINARY_PRESET = 'moodboard_preset';
+    const fileInput = document.getElementById('globalFile');
+    const tags = document.getElementById('globalTags').value;
+    const statusDiv = document.getElementById('uploadGlobalStatus');
+
+    if (!fileInput.files.length) {
+      alert("No file selected");
       return;
     }
-    
-    const cleanImageUrl = cloudinaryData.secure_url;
-    statusDiv.textContent = 'Cloudinary synced! Recording link to Google Sheets...';
 
-    return fetch(GOOGLE_SCRIPT_API_URL, {
+    statusDiv.textContent = 'Streaming image bytes to Cloudinary media servers...';
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_PRESET);
+
+    fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/image/upload', {
       method: 'POST',
-      body: JSON.stringify({
-        action: 'upload_global_file',
-        fileData: "",
-        fileName: file.name, // FIXED here as well
-        fileType: file.type, // FIXED here as well
-        tags: tags,
-        directUrl: cleanImageUrl
-      })
+      body: formData
+    })
+    .then(res => res.json())
+    .then(cloudinaryData => {
+      if (cloudinaryData.error) {
+        statusDiv.innerHTML = '<span style="color:#ff6b6b;">Cloudinary Error: ' + cloudinaryData.error.message + '</span>';
+        return;
+      }
+      const cleanImageUrl = cloudinaryData.secure_url;
+      statusDiv.textContent = 'Cloudinary synced! Recording link to Google Sheets...';
+
+      return fetch(GOOGLE_SCRIPT_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'upload_global_file',
+          fileData: "",
+          fileName: file.name,
+          fileType: file.type,
+          tags: tags,
+          directUrl: cleanImageUrl
+        })
+      });
+    })
+    .then(res => res ? res.json() : null)
+    .then(sheetRes => {
+      if (sheetRes && sheetRes.ok) {
+        statusDiv.textContent = 'Asset successfully pushed to Cloudinary and cataloged in Google Sheets!';
+        fileInput.value = '';
+        document.getElementById('globalTags').value = '';
+      }
+    })
+    .catch(err => {
+      statusDiv.innerHTML = '<span style="color:#ff6b6b;">Pipeline Error: ' + err.message + '</span>';
     });
-  })
-  .then(res => res ? res.json() : null)
-  .then(sheetRes => {
-    if (sheetRes && sheetRes.ok) {
-      statusDiv.textContent = 'Asset successfully pushed to Cloudinary and cataloged in Google Sheets!';
-      fileInput.value = '';
-      document.getElementById('globalTags').value = '';
-    }
-  })
-  .catch(err => {
-    statusDiv.innerHTML = `<span style="color:#ff6b6b;">Pipeline Error: ${err.message}</span>`;
-  });
-}
+  }
 
-
-
-  </script>
+  window.onload = loadSessions;
+</script>
 </body>
 </html>
