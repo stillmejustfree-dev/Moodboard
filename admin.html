@@ -179,7 +179,11 @@
       const reader = new FileReader();
 
       reader.onload = function(evt) {
-        const base64String = evt.target.result.split(',')[1];
+        // FIXED: Safely strips off the metadata header text (e.g. "data:image/jpeg;base64,")
+        const rawResult = evt.target.result;
+        const commaIndex = rawResult.indexOf(',');
+        const base64String = commaIndex !== -1 ? rawResult.substring(commaIndex + 1) : rawResult;
+        
         statusDiv.textContent = 'Uploading to Google Sheet portfolio reservoir...';
 
         fetch(GOOGLE_SCRIPT_API_URL, {
@@ -208,6 +212,7 @@
       };
       reader.readAsDataURL(file);
     }
+
   </script>
 </body>
 </html>
