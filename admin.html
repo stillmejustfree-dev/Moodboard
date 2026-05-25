@@ -163,55 +163,74 @@
       });
     }
 
-    function uploadGlobal(event) {
-      event.preventDefault();
-      const fileInput = document.getElementById('globalFile');
-      const tags = document.getElementById('globalTags').value;
-      const statusDiv = document.getElementById('uploadGlobalStatus');
+// =========================================================
+// CLOUDINARY DIRECT MOBILE UPLOADER ENGINE
+// =========================================================
+function uploadGlobal(event) {
+  event.preventDefault();
+  
+  // !!! ENTER YOUR UNIQUE CLOUDINARY CLOUD NAME INSIDE THESE SINGLE QUOTES !!!
+  const CLOUDINARY_CLOUD_NAME = 'YOUR_CLOUDINARY_CLOUD_NAME';
+  const CLOUDINARY_PRESET = 'moodboard_preset';
 
-      if (!fileInput.files.length) {
-        alert("No file selected");
-        return;
-      }
+  const fileInput = document.getElementById('globalFile');
+  const tags = document.getElementById('globalTags').value;
+  const statusDiv = document.getElementById('uploadGlobalStatus');
 
-      statusDiv.textContent = 'Packing image data chunks...';
-      const file = fileInput.files[0];
-      const reader = new FileReader();
+  if (!fileInput.files.length) {
+    alert("No file selected");
+    return;
+  }
 
-      reader.onload = function(evt) {
-        // FIXED: Safely strips off the metadata header text (e.g. "data:image/jpeg;base64,")
-        const rawResult = evt.target.result;
-        const commaIndex = rawResult.indexOf(',');
-        const base64String = commaIndex !== -1 ? rawResult.substring(commaIndex + 1) : rawResult;
-        
-        statusDiv.textContent = 'Uploading to Google Sheet portfolio reservoir...';
+  statusDiv.textContent = 'Streaming image bytes to Cloudinary media servers...';
+  
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_PRESET);
 
-        fetch(GOOGLE_SCRIPT_API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'upload_global_file',
-            fileData: base64String,
-            fileName: file.name,
-            fileType: file.type,
-            tags: tags
-          })
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (!res || res.error) {
-            statusDiv.innerHTML = `<span style="color:#ff6b6b;">Error: ${res ? res.error : 'Connection lost'}</span>`;
-            return;
-          }
-          statusDiv.textContent = 'Asset pushed successfully into live database reservoir!';
-          fileInput.value = '';
-          document.getElementById('globalTags').value = '';
-        })
-        .catch(() => {
-          statusDiv.innerHTML = '<span style="color:#ff6b6b;">Server sync boundary timeout.</span>';
-        });
-      };
-      reader.readAsDataURL(file);
+  // Push image directly to dedicated media storage (Bypasses Google limits completely)
+  fetch(`https://cloudinary.com{CLOUDINARY_CLOUD_NAME}/image/upload`, {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(cloudinaryData => {
+    if (cloudinaryData.error) {
+      statusDiv.innerHTML = `<span style="color:#ff6b6b;">Cloudinary Error: ${cloudinaryData.error.message}</span>`;
+      return;
     }
+    
+    // Cloudinary successfully generated a perfect public image URL link
+    const cleanImageUrl = cloudinaryData.secure_url;
+    statusDiv.textContent = 'Cloudinary synced! Recording link to Google Sheets...';
+
+    // Drop just the clean text link into your spreadsheet database row
+    return fetch(GOOGLE_SCRIPT_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'upload_global_file',
+        fileData: "", // No more heavy payload bytes crashing Google!
+        fileName: file.name,
+        fileType: file.type,
+        tags: tags,
+        directUrl: cleanImageUrl // Send the direct link safely
+      })
+    });
+  })
+  .then(res => res ? res.json() : null)
+  .then(sheetRes => {
+    if (sheetRes && sheetRes.ok) {
+      statusDiv.textContent = 'Asset successfully pushed to Cloudinary and cataloged in Google Sheets!';
+      fileInput.value = '';
+      document.getElementById('globalTags').value = '';
+    }
+  })
+  .catch(err => {
+    statusDiv.innerHTML = `<span style="color:#ff6b6b;">Pipeline Error: ${err.message}</span>`;
+  });
+}
+
 
   </script>
 </body>
